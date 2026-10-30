@@ -94,5 +94,5 @@ redesplegar o reactivar. Por eso el administrador inicial se recrea solo desde `
 Para datos permanentes se necesita un disco persistente (plan de pago) o migrar a PostgreSQL.
 
 ## Enlaces
-- Repositorio: _(pegar URL de GitHub)_
-- Aplicación publicada: _(pegar URL pública)_
+- Repositorio: https://github.com/santiagoA07/petstyle
+- Aplicación publicada: https://petstyle.onrender.com
