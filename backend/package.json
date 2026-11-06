@@ -1,7 +1,7 @@
 {
   "name": "petstyle-backend",
   "version": "2.0.0",
-  "description": "PetStyle - API REST (Express + SQLite)",
+  "description": "PetStyle - API REST (Express + PostgreSQL)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -10,12 +10,14 @@
     "crear-admin": "node scripts/crear-admin.js",
     "test": "node --test ../tests/roles.test.js"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.5.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1"
   }
 }

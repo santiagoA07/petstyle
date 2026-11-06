@@ -8,24 +8,33 @@ const SELECT_CITA = `
   JOIN mascotas m ON m.id = c.mascota_id
   JOIN usuarios u ON u.id = c.usuario_id`;
 
-const normalizar = (c) => (c ? { ...c, requiere_ruta: !!c.requiere_ruta } : c);
-
-const buscarPorId = (id) => normalizar(db.prepare(`${SELECT_CITA} WHERE c.id = ?`).get(id));
-const listarPorUsuario = (usuarioId) =>
-  db.prepare(`${SELECT_CITA} WHERE c.usuario_id = ? ORDER BY c.fecha_hora DESC`).all(usuarioId).map(normalizar);
-const listarTodas = () => db.prepare(`${SELECT_CITA} ORDER BY c.fecha_hora ASC`).all().map(normalizar);
-
-function crear(d) {
-  const info = db.prepare(
-    `INSERT INTO citas (usuario_id, mascota_id, servicio, estilo_corte, especificaciones, requiere_ruta, direccion, fecha_hora, estado)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente')`
-  ).run(d.usuarioId, d.mascotaId, d.servicio, d.estiloCorte, d.especificaciones,
-        d.requiereRuta ? 1 : 0, d.direccion, d.fechaHora);
-  return buscarPorId(info.lastInsertRowid);
+async function buscarPorId(id) {
+  const { rows } = await db.query(`${SELECT_CITA} WHERE c.id = $1`, [id]);
+  return rows[0];
 }
 
-function actualizarEstado(id, estado) {
-  db.prepare('UPDATE citas SET estado = ? WHERE id = ?').run(estado, id);
+async function listarPorUsuario(usuarioId) {
+  const { rows } = await db.query(`${SELECT_CITA} WHERE c.usuario_id = $1 ORDER BY c.fecha_hora DESC, c.id DESC`, [usuarioId]);
+  return rows;
+}
+
+async function listarTodas() {
+  const { rows } = await db.query(`${SELECT_CITA} ORDER BY c.fecha_hora ASC, c.id ASC`);
+  return rows;
+}
+
+async function crear(d) {
+  const { rows } = await db.query(
+    `INSERT INTO citas (usuario_id, mascota_id, servicio, estilo_corte, especificaciones, requiere_ruta, direccion, fecha_hora, estado)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pendiente') RETURNING id`,
+    [d.usuarioId, d.mascotaId, d.servicio, d.estiloCorte, d.especificaciones,
+     !!d.requiereRuta, d.direccion, d.fechaHora]
+  );
+  return buscarPorId(rows[0].id);
+}
+
+async function actualizarEstado(id, estado) {
+  await db.query('UPDATE citas SET estado = $1 WHERE id = $2', [estado, id]);
   return buscarPorId(id);
 }
 

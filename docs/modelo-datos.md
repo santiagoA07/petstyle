@@ -1,4 +1,4 @@
-# Modelo de datos · PetStyle (SQLite)
+# Modelo de datos · PetStyle (PostgreSQL)
 
 ```mermaid
 erDiagram
@@ -13,7 +13,7 @@ erDiagram
         text telefono
         text password_hash
         text rol "CLIENTE | ADMINISTRADOR"
-        text created_at
+        timestamptz created_at
     }
     MASCOTAS {
         int id PK
@@ -38,7 +38,7 @@ erDiagram
 ```
 
 ## Reglas de integridad
-- `usuarios.email` es único (sin distinguir mayúsculas).
+- `usuarios.email` es único sin distinguir mayúsculas (índice único sobre `lower(email)`).
 - Borrar un usuario borra sus mascotas (`ON DELETE CASCADE`).
 - **No** se puede borrar una mascota que tenga citas (`ON DELETE RESTRICT`).
 - Las contraseñas se guardan con bcrypt (`password_hash`), nunca en texto plano.

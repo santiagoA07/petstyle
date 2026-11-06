@@ -13,6 +13,10 @@ if (!JWT_SECRET) {
   console.warn('⚠  JWT_SECRET no definido: usando uno temporal (solo desarrollo).');
 }
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('Falta la variable de entorno DATABASE_URL (cadena de conexión de PostgreSQL). Revisa backend/.env');
+}
+
 const RAIZ_BACKEND = path.join(__dirname, '..', '..');
 const RAIZ_PROYECTO = path.join(RAIZ_BACKEND, '..');
 
@@ -20,7 +24,7 @@ module.exports = {
   PORT: process.env.PORT || 3000,
   JWT_SECRET,
   JWT_EXPIRES: '8h',
-  DB_PATH: process.env.DB_PATH || path.join(RAIZ_BACKEND, 'data', 'petstyle.db'),
+  DATABASE_URL: process.env.DATABASE_URL,
   SCHEMA_PATH: path.join(RAIZ_PROYECTO, 'database', 'schema.sql'),
   FRONTEND_DIR: path.join(RAIZ_PROYECTO, 'frontend'),
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,

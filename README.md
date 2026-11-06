@@ -14,7 +14,7 @@ recibe el mensaje *"Zona restringida"*, y además el backend rechaza la petició
 ## Tecnologías
 - **Frontend:** HTML5, CSS3, JavaScript (SPA con router por hash). Diseño adaptable a móvil y escritorio.
 - **Backend:** Node.js + Express (API REST), autenticación con JWT.
-- **Base de datos:** SQLite (`better-sqlite3`).
+- **Base de datos:** PostgreSQL (librería `pg`), alojada en Neon (los datos viven fuera del servidor).
 
 ## Estructura
 ```
@@ -30,16 +30,20 @@ petstyle/
 Capas: `routes` (endpoints) → `controllers` (HTTP) → `services` (reglas de negocio) → `models` (SQL).
 
 ## Instalación y ejecución
-Requisitos: Node.js 18 o superior.
+Requisitos: Node.js 18 o superior (se recomienda la versión 22 LTS) y una base PostgreSQL
+(gratis en [Neon](https://neon.tech): crea un proyecto y copia la *connection string*).
 
 ```bash
 cd backend
 npm install
-cp .env.example .env     # en Windows: copy .env.example .env   (y edita JWT_SECRET)
-npm run seed             # (opcional) crea cuentas de demostración
+cp .env.example .env     # en Windows: copy .env.example .env   (y edita JWT_SECRET y DATABASE_URL)
+npm run seed             # (opcional, SOLO en desarrollo) crea cuentas de demostración
 npm start                # abre http://localhost:3000
 ```
-`npm start` ejecuta `node src/server.js`. La base de datos se crea sola en `backend/data/petstyle.db`.
+`npm start` ejecuta `node src/server.js`. Las tablas se crean solas en la base indicada por `DATABASE_URL`.
+
+> Para desarrollo local usa una base **distinta** a la de producción (en Neon: crea una *branch* `dev`),
+> así las pruebas y el `seed` no tocan los datos reales.
 
 ### Cuentas de demostración (`npm run seed`)
 | Rol           | Correo                | Contraseña  | En el login elige… |
@@ -54,16 +58,20 @@ npm run crear-admin -- correo@ejemplo.com "Nombre" "contraseña"   # crea una cu
 ```
 
 ### Pruebas
-```bash
-cd backend && npm test
+Necesitan una base PostgreSQL **de pruebas** (se vacía al empezar; su nombre debe contener `test`):
+```powershell
+cd backend
+$env:TEST_DATABASE_URL="postgresql://usuario:clave@host/petstyle_test?sslmode=require"
+npm test
 ```
+Sin `TEST_DATABASE_URL` las pruebas se omiten.
 
 ## Variables de entorno (`backend/.env`)
 | Variable         | Descripción                                                                  |
 |------------------|------------------------------------------------------------------------------|
 | `PORT`           | Puerto del servidor (por defecto 3000)                                       |
 | `JWT_SECRET`     | **Obligatoria en producción.** Cadena larga y aleatoria                      |
-| `DB_PATH`        | Ruta del archivo SQLite (por defecto `backend/data/petstyle.db`)             |
+| `DATABASE_URL`   | **Obligatoria.** Cadena de conexión de PostgreSQL (Neon, Supabase, local…)   |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NOMBRE` | Si no existe ningún administrador, se crea uno al arrancar |
 
 ## API
@@ -85,14 +93,13 @@ cd backend && npm test
 2. En Render crea un **Web Service** conectado al repositorio, con **Root Directory vacío** (raíz del repo, porque el backend sirve la carpeta `frontend/`).
    - Build Command: `cd backend && npm install`
    - Start Command: `cd backend && npm start`
-3. En *Environment* define: `NODE_ENV=production`, `JWT_SECRET` (cadena larga aleatoria), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+3. En *Environment* define: `NODE_ENV=production`, `NODE_VERSION=22`, `JWT_SECRET` (cadena larga aleatoria), `DATABASE_URL` (la de Neon), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
 4. Despliega y prueba el enlace público: registro, login con ambos roles, citas.
 
-⚠️ **Limitaciones del plan gratuito:** el servicio se suspende tras 15 minutos sin tráfico y tarda cerca de un
-minuto en reactivarse. Además su sistema de archivos es **efímero**: la base SQLite puede reiniciarse al
-redesplegar o reactivar. Por eso el administrador inicial se recrea solo desde `ADMIN_EMAIL`/`ADMIN_PASSWORD`.
-Para datos permanentes se necesita un disco persistente (plan de pago) o migrar a PostgreSQL.
+⚠️ **Limitaciones del plan gratuito de Render:** el servicio se suspende tras 15 minutos sin tráfico y tarda cerca de un
+minuto en reactivarse. Los **datos no se pierden** al reiniciar o redesplegar, porque están en PostgreSQL (Neon) y no en
+el disco del servidor. Revisa también los límites del plan gratuito de Neon.
 
 ## Enlaces
-- Repositorio: https://github.com/santiagoA07/petstyle
-- Aplicación publicada: https://petstyle.onrender.com
+- Repositorio: _(pegar URL de GitHub)_
+- Aplicación publicada: _(pegar URL pública)_

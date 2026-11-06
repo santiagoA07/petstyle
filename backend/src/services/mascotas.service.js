@@ -19,17 +19,18 @@ function validar({ nombre, especie, raza, edad } = {}) {
 const listar = (usuario) => Mascota.listarPorUsuario(usuario.id);
 const crear = (usuario, body) => Mascota.crear(usuario.id, validar(body));
 
-function actualizar(usuario, id, body) {
-  const mascota = Mascota.actualizar(id, usuario.id, validar(body));
+async function actualizar(usuario, id, body) {
+  const mascota = await Mascota.actualizar(id, usuario.id, validar(body));
   if (!mascota) throw new HttpError(404, 'Acceso no autorizado');
   return mascota;
 }
 
-function eliminar(usuario, id) {
+async function eliminar(usuario, id) {
   try {
-    if (!Mascota.eliminar(id, usuario.id)) throw new HttpError(404, 'Acceso no autorizado');
+    if (!(await Mascota.eliminar(id, usuario.id))) throw new HttpError(404, 'Acceso no autorizado');
   } catch (e) {
-    if (String(e.code).startsWith('SQLITE_CONSTRAINT')) {
+    // 23503 = violación de llave foránea (la mascota tiene citas)
+    if (e.code === '23503' || e.code === '23001') {
       throw new HttpError(409, 'No se puede eliminar: esta mascota tiene citas registradas.');
     }
     throw e;

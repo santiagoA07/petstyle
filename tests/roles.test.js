@@ -1,20 +1,38 @@
 // Pruebas de integración: login con dos roles, vistas protegidas y flujo principal.
-// Ejecutar desde backend/:  npm test
-process.env.DB_PATH = ':memory:';
-process.env.JWT_SECRET = 'secreto-de-pruebas';
-
+// Necesitan una base PostgreSQL de PRUEBAS (se vacía al empezar). Ejecutar desde backend/:
+//   $env:TEST_DATABASE_URL="postgresql://..."   (PowerShell)      npm test
+// Por seguridad, el nombre de la base debe contener "test" (nunca apuntes esto a producción).
 const test = require('node:test');
 const assert = require('node:assert/strict');
+
+const URL_PRUEBAS = process.env.TEST_DATABASE_URL;
+if (!URL_PRUEBAS) {
+  console.log('Pruebas omitidas: define TEST_DATABASE_URL con una base PostgreSQL de pruebas.');
+  process.exit(0);
+}
+if (!/test/i.test(new URL(URL_PRUEBAS).pathname)) {
+  console.error('TEST_DATABASE_URL debe apuntar a una base cuyo nombre contenga "test".');
+  process.exit(1);
+}
+process.env.DATABASE_URL = URL_PRUEBAS;
+process.env.JWT_SECRET = 'secreto-de-pruebas';
+
+const db = require('../backend/src/config/db');
 const { crearOPromoverAdministrador } = require('../backend/src/services/auth.service');
 const app = require('../backend/src/app');
 
 let servidor, base;
 test.before(async () => {
-  crearOPromoverAdministrador({ email: 'admin@test.com', nombre: 'Admin', password: 'admin123' });
+  await db.iniciarBD();
+  await db.query('TRUNCATE citas, mascotas, usuarios RESTART IDENTITY CASCADE');
+  await crearOPromoverAdministrador({ email: 'admin@test.com', nombre: 'Admin', password: 'admin123' });
   await new Promise((ok) => { servidor = app.listen(0, ok); });
   base = `http://127.0.0.1:${servidor.address().port}/api`;
 });
-test.after(() => servidor.close());
+test.after(async () => {
+  servidor.close();
+  await db.cerrar();
+});
 
 async function http(metodo, ruta, cuerpo, token) {
   const r = await fetch(base + ruta, {

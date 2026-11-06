@@ -1,14 +1,25 @@
-// Conexión única a SQLite; crea las tablas al iniciar.
+// Conexión a PostgreSQL (Neon, Supabase, Render o local). Lee DATABASE_URL.
 const fs = require('fs');
-const path = require('path');
-const Database = require('better-sqlite3');
-const { DB_PATH, SCHEMA_PATH } = require('./index');
+const { Pool } = require('pg');
+const { DATABASE_URL, SCHEMA_PATH } = require('./index');
 
-if (DB_PATH !== ':memory:') fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 10000,        // los servicios en la nube cierran conexiones inactivas
+  connectionTimeoutMillis: 15000   // Neon puede tardar unos segundos en "despertar"
+});
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-db.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+// Sin este manejador, una conexión inactiva cerrada por el servidor tumbaría el proceso.
+pool.on('error', (err) => console.error('Error en una conexión inactiva de la BD:', err.message));
 
-module.exports = db;
+const query = (texto, params) => pool.query(texto, params);
+
+// Crea las tablas si no existen (idempotente). Se llama una vez al arrancar.
+async function iniciarBD() {
+  await pool.query(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+}
+
+const cerrar = () => pool.end();
+
+module.exports = { query, iniciarBD, cerrar };
